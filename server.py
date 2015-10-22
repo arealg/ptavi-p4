@@ -18,7 +18,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         ip = self.client_address[0]
         puerto = self.client_address[1]
         print("{} {}".format(ip, puerto))
-        self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
         while 1:
             # Leyendo línea a línea lo que nos envía el cliente
             line = self.rfile.read()
@@ -27,8 +26,11 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
+            print(lista)
             if 'REGISTER' in lista:
                 self.dicc[lista[1].split(':')[1]] = ip
+                self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+
 
 
 if __name__ == "__main__":
