@@ -26,10 +26,14 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
-            print(lista)
             if 'REGISTER' in lista:
-                self.dicc[lista[1].split(':')[1]] = ip
-                self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+                login = lista[1].split(':')[1]
+                self.dicc[login] = ip
+                self.wfile.write(b"SIP/2.0 200 OK" + b'\n')
+                if '0' in lista:
+                    del self.dicc[login]
+                    self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+
 
 
 
