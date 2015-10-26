@@ -66,6 +66,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         print("{} {}".format(IP, PUERTO))
         while 1:
             line = self.rfile.read()
+
             if not line:
                 break
             linea = line.decode('utf-8')
@@ -78,7 +79,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         self.register2json()
                         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
                 else:
-                    tiempo = time.time() + float(lista[3])
+                    tiempo = time.time() + float(lista[4])
                     self.registrar_cliente(IP, login, tiempo)
                     self.register2json()
             self.tiempo_exp()
