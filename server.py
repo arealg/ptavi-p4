@@ -9,59 +9,63 @@ import sys
 import json
 import time
 
+
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     SIP Register Handler
     """
     dicc = {}
 
-
     def register2json(self):
         """
-        Registramos al cliente en un fichero json
+        Se registra al cliente en un fichero json.
         """
         with open('registered.json', 'w') as file:
             json.dump(self.dicc, file, sort_keys=True, indent=4)
 
-    def registrar_user(self, IP, login, tiempo):
+    def registrar_cliente(self, IP, login, tiempo):
         """
-        Añadimos al cliente con un Address y Expires en un diccionario,
-        que mas adelante lo añadimos al fihcero json
+        Se añade al cliente con un Address y Expires en un diccionario.
         """
         lista_info = {}
         lista_info['address'] = IP
-        lista_info['expires'] = (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(tiempo)))
+        lista_info['expires'] = (time.strftime('%Y-%m-%d %H:%M:%S',
+                                 time.localtime(tiempo)))
         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
         self.dicc[login] = lista_info
 
-    # def json2registered(self):
-    #     """
-    #
-    #     """
-    #     try:
-    #         fich =  open('registered.json','r')
-    #         data = fich.readlines()
-    #         fichero = json.loads(data)
-    #         fich.close()
-    #     except:
-    #         pass
+    def tiempo_exp(self):
+        lista_user = []
+        for login in self.dicc:
+            exp = time.strptime(self.dicc[login]['expires'],
+                                '%Y-%m-%d %H:%M:%S')
+            if time.time() >= time.mktime(exp):
+                lista_user.append(login)
+        for login in lista_user:
+                del self.dicc[login]
+                self.register2json()
+
+    def json2registered(self):
+        """
+        Se mira si hay un fichero registered.json.
+        """
+        try:
+            with open('registered.json', 'r') as fich:
+                fichero = json.loads(fich.read())
+                self.dicc = fichero
+        except:
+            pass
 
     def handle(self):
         """
-        Principal método de la clase SIPRegisterHandler, identificamos al
-        cliente, leemos lo que nos envía y respondemos. También Registramos
-        y borramos a un cliente dependiendo de su tiempo de Expiración
+        Se identifica al cliente y se registra en un diccionario.
         """
-        # self.json2registered()
-        tiempo_real = time.time()
-        # Escribe dirección y puerto del cliente (de tupla client_address)
+        self.json2registered()
         IP = self.client_address[0]
         PUERTO = self.client_address[1]
         print("{} {}".format(IP, PUERTO))
         while 1:
-            # Leyendo línea a línea lo que nos envía el cliente
             line = self.rfile.read()
-            # Si no hay más líneas salimos del bucle infinito
             if not line:
                 break
             linea = line.decode('utf-8')
@@ -71,29 +75,16 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 if '0' in lista:
                     if login in self.dicc:
                         del self.dicc[login]
+                        self.register2json()
                         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
                 else:
-                    tiempo = tiempo_real + float(lista[3])
-                    print('TIEMPO MAS EXPIRE',tiempo)
-                    self.registrar_user(IP, login, tiempo)
+                    tiempo = time.time() + float(lista[3])
+                    self.registrar_cliente(IP, login, tiempo)
                     self.register2json()
-            # print(self.dicc)
-            try:
-                for i in self.dicc:
-                    print('SALIDO DEL FICH',self.dicc[i]['expires'])
-                    exp = time.strptime(self.dicc[i]['expires'], '%Y-%m-%d %H:%M:%S')
-                    exp_new = time.mktime(exp)
-                    print('SALIDO Y PASADO POR STRP',time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(exp_new)))
-                    # print('TIEMPO EXP',time.mktime(exp))
-                    # if time.time() >= time.mktime(exp):
-                    #      del self.dicc[i]
-            except:
-                pass
-            # print(self.dicc)
+            self.tiempo_exp()
 
 
 if __name__ == "__main__":
-    # Creamos servidor de eco y escuchamos
     serv = socketserver.UDPServer(('', int(sys.argv[1])), SIPRegisterHandler)
     print("Lanzando servidor UDP de eco...")
     serv.serve_forever()
