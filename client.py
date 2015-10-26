@@ -31,8 +31,8 @@ my_socket.connect((SERVER, PORT))
 EXPIRES = linea[2]
 
 print(LINE + 'Expires: ' + EXPIRES + '\r\n\r\n')
-LINE = LINE + EXPIRES
-my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
+LINE = LINE + 'Expires: ' + EXPIRES
+my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
 data = my_socket.recv(1024)
 
 print(data.decode('utf-8'))
