@@ -11,21 +11,53 @@ import time
 
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
-    Echo server class
+    SIP Register Handler
     """
     dicc = {}
-    lista = []
 
 
     def register2json(self):
+        """
+        Registramos al cliente en un fichero json
+        """
         with open('registered.json', 'w') as file:
-            json.dump(self.lista, file, sort_keys=True, indent=4)
+            json.dump(self.dicc, file, sort_keys=True, indent=4)
+
+    def registrar_user(self, IP, login, tiempo):
+        """
+        Añadimos al cliente con un Address y Expires en un diccionario,
+        que mas adelante lo añadimos al fihcero json
+        """
+        lista_info = {}
+        lista_info['address'] = IP
+        lista_info['expires'] = (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(tiempo)))
+        self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+        self.dicc[login] = lista_info
+
+    # def json2registered(self):
+    #     """
+    #
+    #     """
+    #     try:
+    #         fich =  open('registered.json','r')
+    #         data = fich.readlines()
+    #         fichero = json.loads(data)
+    #         fich.close()
+    #     except:
+    #         pass
 
     def handle(self):
+        """
+        Principal método de la clase SIPRegisterHandler, identificamos al
+        cliente, leemos lo que nos envía y respondemos. También Registramos
+        y borramos a un cliente dependiendo de su tiempo de Expiración
+        """
+        # self.json2registered()
+        tiempo_real = time.time()
         # Escribe dirección y puerto del cliente (de tupla client_address)
-        ip = self.client_address[0]
-        puerto = self.client_address[1]
-        print("{} {}".format(ip, puerto))
+        IP = self.client_address[0]
+        PUERTO = self.client_address[1]
+        print("{} {}".format(IP, PUERTO))
         while 1:
             # Leyendo línea a línea lo que nos envía el cliente
             line = self.rfile.read()
@@ -37,15 +69,27 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if 'REGISTER' in lista:
                 login = lista[1].split(':')[1]
                 if '0' in lista:
-                    self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+                    if login in self.dicc:
+                        del self.dicc[login]
+                        self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
                 else:
-                    self.dicc['address'] = ip
-                    self.dicc['expires'] = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time.time()))+ ' ' + lista[3]
-                    self.wfile.write(b"SIP/2.0 200 OK" + b'\n')
-                    lista_user = [login,self.dicc]
-                    self.lista.append(lista_user)
-        self.register2json()
-
+                    tiempo = tiempo_real + float(lista[3])
+                    print('TIEMPO MAS EXPIRE',tiempo)
+                    self.registrar_user(IP, login, tiempo)
+                    self.register2json()
+            # print(self.dicc)
+            try:
+                for i in self.dicc:
+                    print('SALIDO DEL FICH',self.dicc[i]['expires'])
+                    exp = time.strptime(self.dicc[i]['expires'], '%Y-%m-%d %H:%M:%S')
+                    exp_new = time.mktime(exp)
+                    print('SALIDO Y PASADO POR STRP',time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(exp_new)))
+                    # print('TIEMPO EXP',time.mktime(exp))
+                    # if time.time() >= time.mktime(exp):
+                    #      del self.dicc[i]
+            except:
+                pass
+            # print(self.dicc)
 
 
 if __name__ == "__main__":
