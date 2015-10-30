@@ -43,7 +43,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 lista_user.append(login)
         for login in lista_user:
                 del self.dicc[login]
-                self.register2json()
 
     def json2registered(self):
         """
@@ -66,24 +65,22 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         print("{} {}".format(IP, PUERTO))
         while 1:
             line = self.rfile.read()
-
             if not line:
                 break
             linea = line.decode('utf-8')
             lista = linea.split()
+            expires = lista[4]
             if 'REGISTER' in lista:
                 login = lista[1].split(':')[1]
-                if '0' in lista:
+                self.tiempo_exp()
+                if expires == '0':
                     if login in self.dicc:
                         del self.dicc[login]
-                        self.register2json()
                         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
                 else:
                     tiempo = time.time() + float(lista[4])
                     self.registrar_cliente(IP, login, tiempo)
-                    self.register2json()
-            self.tiempo_exp()
-
+            self.register2json()
 
 if __name__ == "__main__":
     serv = socketserver.UDPServer(('', int(sys.argv[1])), SIPRegisterHandler)
