@@ -77,6 +77,8 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     if login in self.dicc:
                         del self.dicc[login]
                         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
+                    else:
+                        self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
                 else:
                     tiempo = time.time() + float(lista[4])
                     self.registrar_cliente(IP, login, tiempo)
