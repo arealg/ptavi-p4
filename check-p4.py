@@ -30,7 +30,7 @@ files = ['README.md',
          '.gitignore',
          'check-p4.py',
          '.git'
-         ]
+         'register.libpcap']
 
 aleatorio = str(int(random.random() * 1000000))
 
