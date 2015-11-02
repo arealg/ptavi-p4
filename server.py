@@ -29,7 +29,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         """
         lista_info = {}
         lista_info['address'] = IP
-        lista_info['expires'] = (time.strftime('%Y-%m-%d %H:%M:%S',
+        lista_info['expires'] = (time.strftime('%Y-%m-%d %H:%M:%S +0100',
                                  time.localtime(tiempo)))
         self.wfile.write(b"SIP/2.0 200 OK" + b'\r\n\r\n')
         self.dicc[login] = lista_info
@@ -38,7 +38,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         lista_user = []
         for login in self.dicc:
             exp = time.strptime(self.dicc[login]['expires'],
-                                '%Y-%m-%d %H:%M:%S')
+                                '%Y-%m-%d %H:%M:%S +0100')
             if time.time() >= time.mktime(exp):
                 lista_user.append(login)
         for login in lista_user:
